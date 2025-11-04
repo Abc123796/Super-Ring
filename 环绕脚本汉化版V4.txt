@@ -1,19 +1,26 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local LocalPlayer = Players.LocalPlayer
+local SoundService = game:GetService("SoundService")
+local StarterGui = game:GetService("StarterGui")
+local TextChatService = game:GetService("TextChatService")
 local Workspace = game:GetService("Workspace")
 
-local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local LocalPlayer = Players.LocalPlayer
 
-local Folder = Instance.new("Folder", Workspace)
-local Part = Instance.new("Part", Folder)
-local Attachment1 = Instance.new("Attachment", Part)
-Part.Anchored = true
-Part.CanCollide = false
-Part.Transparency = 1
+-- 添加缺失的 table.find 函数
+if not table.find then
+    table.find = function(t, value)
+        for i, v in ipairs(t) do
+            if v == value then
+                return i
+            end
+        end
+        return nil
+    end
+end
 
+-- 初始化网络控制
 if not getgenv().Network then
     getgenv().Network = {
         BaseParts = {},
@@ -43,48 +50,15 @@ if not getgenv().Network then
     EnablePartControl()
 end
 
-local function ForcePart(v)
-    if v:IsA("Part") and not v.Anchored and not v.Parent:FindFirstChild("Humanoid") and not v.Parent:FindFirstChild("Head") and v.Name ~= "Handle" then
-        for _, x in next, v:GetChildren() do
-            if x:IsA("BodyAngularVelocity") or x:IsA("BodyForce") or x:IsA("BodyGyro") or x:IsA("BodyPosition") or x:IsA("BodyThrust") or x:IsA("BodyVelocity") or x:IsA("RocketPropulsion") then
-                x:Destroy()
-            end
-        end
-        if v:FindFirstChild("Attachment") then
-            v:FindFirstChild("Attachment"):Destroy()
-        end
-        if v:FindFirstChild("AlignPosition") then
-            v:FindFirstChild("AlignPosition"):Destroy()
-        end
-        if v:FindFirstChild("Torque") then
-            v:FindFirstChild("Torque"):Destroy()
-        end
-        v.CanCollide = false
-        local Torque = Instance.new("Torque", v)
-        Torque.Torque = Vector3.new(100000, 100000, 100000)
-        local AlignPosition = Instance.new("AlignPosition", v)
-        local Attachment2 = Instance.new("Attachment", v)
-        Torque.Attachment0 = Attachment2
-        AlignPosition.MaxForce = 9999999999999999
-        AlignPosition.MaxVelocity = math.huge
-        AlignPosition.Responsiveness = 200
-        AlignPosition.Attachment0 = Attachment2
-        AlignPosition.Attachment1 = Attachment1
-    end
-end
+-- 创建基础部件
+local Folder = Instance.new("Folder", Workspace)
+local Part = Instance.new("Part", Folder)
+local Attachment1 = Instance.new("Attachment", Part)
+Part.Anchored = true
+Part.CanCollide = false
+Part.Transparency = 1
 
-
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local SoundService = game:GetService("SoundService")
-local StarterGui = game:GetService("StarterGui")
-local TextChatService = game:GetService("TextChatService")
-
-local LocalPlayer = Players.LocalPlayer
-
--- Sound Effects
+-- 音效功能
 local function playSound(soundId)
     local sound = Instance.new("Sound")
     sound.SoundId = "rbxassetid://" .. soundId
@@ -95,10 +69,10 @@ local function playSound(soundId)
     end)
 end
 
--- Play initial sound
+-- 播放初始音效
 playSound("2865227271")
 
--- GUI Creation
+-- GUI 创建
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "环绕脚本汉化版V4Gui"
 ScreenGui.ResetOnSpawn = false
@@ -107,56 +81,56 @@ ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 220, 0, 190)
 MainFrame.Position = UDim2.new(0.5, -110, 0.5, -95)
-MainFrame.BackgroundColor3 = Color3.fromRGB(204, 0, 0) -- Light brown
+MainFrame.BackgroundColor3 = Color3.fromRGB(204, 0, 0)
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
 
--- Make the GUI round
+-- 创建圆角
 local UICorner = Instance.new("UICorner")
 UICorner.CornerRadius = UDim.new(0, 20)
 UICorner.Parent = MainFrame
 
+-- 标题
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 40)
 Title.Position = UDim2.new(0, 0, 0, 0)
 Title.Text = "环绕脚本汉化版V4"
-Title.TextColor3 = Color3.fromRGB(153, 0, 0) -- Dark brown
-Title.BackgroundColor3 = Color3.fromRGB(255, 51, 51) -- Lighter brown
-Title.Font = Enum.Font.Fondamento -- More elegant font
+Title.TextColor3 = Color3.fromRGB(153, 0, 0)
+Title.BackgroundColor3 = Color3.fromRGB(255, 51, 51)
+Title.Font = Enum.Font.Fondamento
 Title.TextSize = 22
 Title.Parent = MainFrame
 
--- Round the title
 local TitleCorner = Instance.new("UICorner")
 TitleCorner.CornerRadius = UDim.new(0, 20)
 TitleCorner.Parent = Title
 
+-- 切换按钮
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0.8, 0, 0, 35)
 ToggleButton.Position = UDim2.new(0.1, 0, 0.3, 0)
-ToggleButton.Text = "Ring Parts Off"
-ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255) -- Sienna
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255) -- Cornsilk
+ToggleButton.Text = "环绕脚本汉化版V4点击开启(关闭状态)"
+ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleButton.Font = Enum.Font.Fondamento
 ToggleButton.TextSize = 18
 ToggleButton.Parent = MainFrame
 
--- Round the toggle button
 local ToggleCorner = Instance.new("UICorner")
 ToggleCorner.CornerRadius = UDim.new(0, 10)
 ToggleCorner.Parent = ToggleButton
 
+-- 半径控制按钮
 local DecreaseRadius = Instance.new("TextButton")
 DecreaseRadius.Size = UDim2.new(0.2, 0, 0, 35)
 DecreaseRadius.Position = UDim2.new(0.1, 0, 0.6, 0)
 DecreaseRadius.Text = "<"
-DecreaseRadius.BackgroundColor3 = Color3.fromRGB(255, 153, 153) -- Saddle brown
-DecreaseRadius.TextColor3 = Color3.fromRGB(255, 255, 255) -- Cornsilk
+DecreaseRadius.BackgroundColor3 = Color3.fromRGB(255, 153, 153)
+DecreaseRadius.TextColor3 = Color3.fromRGB(255, 255, 255)
 DecreaseRadius.Font = Enum.Font.Fondamento
 DecreaseRadius.TextSize = 18
 DecreaseRadius.Parent = MainFrame
 
--- Round the decrease button
 local DecreaseCorner = Instance.new("UICorner")
 DecreaseCorner.CornerRadius = UDim.new(0, 10)
 DecreaseCorner.Parent = DecreaseRadius
@@ -165,59 +139,58 @@ local IncreaseRadius = Instance.new("TextButton")
 IncreaseRadius.Size = UDim2.new(0.2, 0, 0, 35)
 IncreaseRadius.Position = UDim2.new(0.7, 0, 0.6, 0)
 IncreaseRadius.Text = ">"
-IncreaseRadius.BackgroundColor3 = Color3.fromRGB(255, 153, 153) -- Saddle brown
-IncreaseRadius.TextColor3 = Color3.fromRGB(255, 255, 255) -- Cornsilk
+IncreaseRadius.BackgroundColor3 = Color3.fromRGB(255, 153, 153)
+IncreaseRadius.TextColor3 = Color3.fromRGB(255, 255, 255)
 IncreaseRadius.Font = Enum.Font.Fondamento
 IncreaseRadius.TextSize = 18
 IncreaseRadius.Parent = MainFrame
 
--- Round the increase button
 local IncreaseCorner = Instance.new("UICorner")
 IncreaseCorner.CornerRadius = UDim.new(0, 10)
 IncreaseCorner.Parent = IncreaseRadius
 
+-- 半径显示
 local RadiusDisplay = Instance.new("TextLabel")
 RadiusDisplay.Size = UDim2.new(0.4, 0, 0, 35)
 RadiusDisplay.Position = UDim2.new(0.3, 0, 0.6, 0)
 RadiusDisplay.Text = "范围:50"
-RadiusDisplay.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Tan
-RadiusDisplay.TextColor3 = Color3.fromRGB(255, 255, 255) -- Dark brown
+RadiusDisplay.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+RadiusDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
 RadiusDisplay.Font = Enum.Font.Fondamento
 RadiusDisplay.TextSize = 18
 RadiusDisplay.Parent = MainFrame
 
--- Round the radius display
 local RadiusCorner = Instance.new("UICorner")
 RadiusCorner.CornerRadius = UDim.new(0, 10)
 RadiusCorner.Parent = RadiusDisplay
 
+-- 水印
 local Watermark = Instance.new("TextLabel")
 Watermark.Size = UDim2.new(1, 0, 0, 20)
 Watermark.Position = UDim2.new(0, 0, 1, -20)
 Watermark.Text = "环绕脚本汉化版V4"
-Watermark.TextColor3 = Color3.fromRGB(255, 255, 255) -- Dark brown
+Watermark.TextColor3 = Color3.fromRGB(255, 255, 255)
 Watermark.BackgroundTransparency = 1
 Watermark.Font = Enum.Font.Fondamento
 Watermark.TextSize = 14
 Watermark.Parent = MainFrame
 
--- Add minimize button
+-- 最小化按钮
 local MinimizeButton = Instance.new("TextButton")
 MinimizeButton.Size = UDim2.new(0, 30, 0, 30)
 MinimizeButton.Position = UDim2.new(1, -35, 0, 5)
 MinimizeButton.Text = "-"
-MinimizeButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255) -- Saddle brown
-MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255) -- Cornsilk
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
+MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinimizeButton.Font = Enum.Font.Fondamento
 MinimizeButton.TextSize = 18
 MinimizeButton.Parent = MainFrame
 
--- Round the minimize button
 local MinimizeCorner = Instance.new("UICorner")
 MinimizeCorner.CornerRadius = UDim.new(0, 15)
 MinimizeCorner.Parent = MinimizeButton
 
--- Minimize functionality
+-- 最小化功能
 local minimized = false
 MinimizeButton.MouseButton1Click:Connect(function()
     minimized = not minimized
@@ -241,11 +214,8 @@ MinimizeButton.MouseButton1Click:Connect(function()
     playSound("12221967")
 end)
 
--- Make GUI draggable
-local dragging
-local dragInput
-local dragStart
-local startPos
+-- 拖拽功能
+local dragging, dragInput, dragStart, startPos
 
 local function update(input)
     local delta = input.Position - dragStart
@@ -278,33 +248,7 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Ring Parts Logic
-if not getgenv().Network then
-    getgenv().Network = {
-        BaseParts = {},
-        Velocity = Vector3.new(14.46262424, 14.46262424, 14.46262424)
-    }
-    Network.RetainPart = function(Part)
-        if typeof(Part) == "Instance" and Part:IsA("BasePart") and Part:IsDescendantOf(workspace) then
-            table.insert(Network.BaseParts, Part)
-            Part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
-            Part.CanCollide = false
-        end
-    end
-    local function EnablePartControl()
-        LocalPlayer.ReplicationFocus = workspace
-        RunService.Heartbeat:Connect(function()
-            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
-            for _, Part in pairs(Network.BaseParts) do
-                if Part:IsDescendantOf(workspace) then
-                    Part.Velocity = Network.Velocity
-                end
-            end
-        end)
-    end
-    EnablePartControl()
-end
-
+-- 环绕部件逻辑
 local radius = 50
 local height = 100
 local rotationSpeed = 1
@@ -312,11 +256,10 @@ local attractionStrength = 1000
 local ringPartsEnabled = false
 
 local function RetainPart(Part)
-    if Part:IsA("BasePart") and not Part.Anchored and Part:IsDescendantOf(workspace) then
+    if Part:IsA("BasePart") and not Part.Anchored and Part:IsDescendantOf(Workspace) then
         if Part.Parent == LocalPlayer.Character or Part:IsDescendantOf(LocalPlayer.Character) then
             return false
         end
-
         Part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
         Part.CanCollide = false
         return true
@@ -325,6 +268,7 @@ local function RetainPart(Part)
 end
 
 local parts = {}
+
 local function addPart(part)
     if RetainPart(part) then
         if not table.find(parts, part) then
@@ -340,13 +284,15 @@ local function removePart(part)
     end
 end
 
-for _, part in pairs(workspace:GetDescendants()) do
+-- 初始化现有部件
+for _, part in pairs(Workspace:GetDescendants()) do
     addPart(part)
 end
 
-workspace.DescendantAdded:Connect(addPart)
-workspace.DescendantRemoving:Connect(removePart)
+Workspace.DescendantAdded:Connect(addPart)
+Workspace.DescendantRemoving:Connect(removePart)
 
+-- 主循环
 RunService.Heartbeat:Connect(function()
     if not ringPartsEnabled then return end
     
@@ -371,7 +317,7 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Button functionality
+-- 按钮功能
 ToggleButton.MouseButton1Click:Connect(function()
     ringPartsEnabled = not ringPartsEnabled
     ToggleButton.Text = ringPartsEnabled and "已启动环绕脚本汉化版V4" or "已关闭环绕脚本汉化版V4"
@@ -381,14 +327,25 @@ end)
 
 DecreaseRadius.MouseButton1Click:Connect(function()
     radius = math.max(1, radius - 2)
-    RadiusDisplay.Text = "Radius: " .. radius
+    RadiusDisplay.Text = "范围:" .. radius
     playSound("12221967")
 end)
 
 IncreaseRadius.MouseButton1Click:Connect(function()
     radius = math.min(1000, radius + 2)
-    RadiusDisplay.Text = "Radius: " .. radius
+    RadiusDisplay.Text = "范围:" .. radius
     playSound("12221967")
 end)
-    end
-end
+
+-- 发送通知
+local userId = Players:GetUserIdFromNameAsync("Robloxlukasgames")
+local thumbType = Enum.ThumbnailType.HeadShot
+local thumbSize = Enum.ThumbnailSize.Size420x420
+local content, isReady = Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
+
+StarterGui:SetCore("SendNotification", {
+    Title = "环绕脚本汉化版V4",
+    Text = "enjoy",
+    Icon = content,
+    Duration = 5
+})
